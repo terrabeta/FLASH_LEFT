@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>LEFT</title>
+        <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+        <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+        <style>
+            @import url("https://fonts.googleapis.com/css2?family=Inter:wght@700;900&family=JetBrains+Mono:wght@700;800&display=swap");
+
+            body {
+                background-color: #000;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                width: 100vw;
+                font-family: "Inter", sans-serif;
+                -webkit-user-select: none; /* Safari */
+                -moz-user-select: none; /* Firefox */
+                -ms-user-select: none; /* IE10+/Edge */
+                user-select: none; /* Standard syntax */
+                -webkit-user-drag: none; /* Prevents dragging in Chrome/Safari/Edge */
+                user-drag: none;
+            }
+
+            #app-container {
+                width: 100%;
+                height: 100%;
+                max-width: 177.78vh;
+                max-height: 56.25vw;
+                background-color: black;
+                display: flex;
+                flex-direction: column;
+                aspect-ratio: 16/9;
+                box-sizing: border-box;
+            }
+
+            .video-row {
+                display: flex;
+                width: 100%;
+                flex: 0 0 auto;
+            }
+
+            .video-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                background-color: #000;
+            }
+
+            .video-wrapper {
+                width: 100%;
+                aspect-ratio: 16/9;
+                background-color: #cc0000;
+                position: relative;
+            }
+
+            video,
+            .video-wrapper iframe {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                display: block;
+                border: none;
+                outline: none;
+            }
+
+            .video-wrapper iframe {
+                pointer-events: none;
+            }
+
+            .label-bar {
+                width: 100%;
+                background-color: #1a1a1a;
+                color: white;
+                border-top: 5px solid #fdd935;
+                text-align: center;
+                font-family: "Inter", sans-serif;
+                font-weight: 700;
+                padding: 0.8vh 0;
+                font-size: 2.5vh;
+                line-height: 1;
+                z-index: 10;
+            }
+
+            .bottom-row .video-container {
+                flex-direction: column;
+            }
+
+            .info-row {
+                flex: 1;
+                background-color: #f3f4f6;
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                align-items: center;
+                padding: 0;
+                border-top: 1px solid #000;
+                border-bottom: 1px solid #000;
+                min-height: 0;
+                position: relative;
+                overflow: hidden;
+                animation: yellow-bg-pulse 5s infinite ease-in-out;
+            }
+
+            .info-row::after {
+                content: "";
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 50%;
+                height: 100%;
+                background: linear-gradient(to right, transparent 0%, rgba(253, 217, 53, 0.4) 50%, transparent 100%);
+                transform: skewX(-25deg);
+                animation: shine-sweep 8s infinite linear;
+                pointer-events: none;
+                mix-blend-mode: multiply;
+            }
+
+            @keyframes yellow-bg-pulse {
+                0%,
+                100% {
+                    background-color: #f3f4f6;
+                    box-shadow: inset 0 0 0 rgba(253, 217, 53, 0);
+                }
+                50% {
+                    background-color: #fffae0;
+                    box-shadow: inset 0 0 15px rgba(253, 217, 53, 0.2);
+                }
+            }
+
+            @keyframes shine-sweep {
+                0% {
+                    left: -100%;
+                    opacity: 0;
+                }
+                5% {
+                    opacity: 1;
+                }
+                40% {
+                    left: 200%;
+                    opacity: 0;
+                }
+                100% {
+                    left: 200%;
+                    opacity: 0;
+                }
+            }
+
+            .clock-section {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+            }
+
+            .local-time {
+                font-family: "JetBrains Mono", monospace;
+                font-weight: 800;
+                font-size: 8vh;
+                color: #000;
+                line-height: 1;
+                text-align: center;
+            }
+
+            .logo-section {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+            }
+
+            .logo-div {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .logo-svg {
+                height: 10vh;
+                width: auto;
+            }
+
+            .world-clocks {
+                display: flex;
+                flex-direction: column;
+                gap: 0.8vh;
+                justify-content: center;
+                align-items: center;
+                width: 100%;
+                height: 100%;
+            }
+
+            .world-clock-row {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                gap: 1.5vw;
+                font-family: "JetBrains Mono", monospace;
+                font-weight: 800;
+                font-size: 4vh;
+                color: #000;
+                line-height: 1;
+                width: 100%;
+            }
+
+            .tz-label {
+                font-family: "JetBrains Mono", monospace;
+                width: 4ch;
+            }
+        </style>
+    </head>
+    <body>
+        <div id="app-container">
+            <!-- Top Row -->
+            <div class="video-row top-row">
+                <div class="video-container">
+                    <div class="video-wrapper" id="wrapper1">
+                        <video id="video1" muted playsinline loop autoplay></video>
+                    </div>
+                    <div class="label-bar" id="label1">BBC NEWS</div>
+                </div>
+                <div class="video-container">
+                    <div class="video-wrapper" id="wrapper2">
+                        <video id="video2" muted playsinline loop autoplay></video>
+                    </div>
+                    <div class="label-bar" id="label2">SKY NEWS</div>
+                </div>
+                <div class="video-container">
+                    <div class="video-wrapper" id="wrapper3">
+                        <video id="video3" muted playsinline loop autoplay></video>
+                    </div>
+                    <div class="label-bar" id="label3">BBC NEWS</div>
+                </div>
+            </div>
+
+            <!-- Middle Info Row -->
+            <div class="info-row">
+                <div class="clock-section">
+                    <div class="local-time" id="local-time">00:00:00</div>
+                </div>
+                <div class="logo-section">
+                    <div class="logo-div">
+                        <svg class="logo-svg" viewBox="0 0 174 54" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <g>
+                                <path
+                                    d="M68.3539 52.9752H99.3473L89.2752 1.08301H78.4232L68.3511 52.9752H68.3539Z"
+                                    fill="#1D1D2C"
+                                ></path>
+                                <path
+                                    d="M0 52.975H9.68079V29.6291H24.3662V21.8271H9.61509V8.8876H25.2089V0.954102H0V52.975Z"
+                                    fill="#1D1D2C"
+                                ></path>
+                                <path
+                                    d="M34.2725 52.9752H58.2502V44.9131H43.8904V1.08301H34.2725V52.9752Z"
+                                    fill="#1D1D2C"
+                                ></path>
+                                <path
+                                    d="M135.894 14.6085C135.894 9.8627 137.062 5.76587 131.281 2.18936C126.993 -0.478006 118.675 -0.801064 113.802 1.7348C109.123 4.2049 108.28 7.52125 108.083 11.295C107.563 19.6173 107.889 21.3098 116.855 27.4879L119.78 29.5692C126.733 34.4465 126.733 34.315 126.536 40.9506C126.47 43.2263 126.21 45.1132 124.131 46.2825C122.831 46.9972 120.429 46.8685 119.192 46.2167C116.398 44.59 117.178 39.1294 117.178 37.2426V34.5123H107.563V38.6749C107.563 44.0068 106.783 48.4295 112.63 52.006C117.372 54.9335 126.99 54.2817 130.824 52.3319C135.503 49.8618 136.151 45.2447 136.345 41.6682C136.931 32.4339 136.085 29.5721 125.753 22.5506L123.285 20.9239C117.504 17.1529 117.698 17.6075 117.566 12.5358C117.566 10.3887 117.892 8.95928 119.58 7.98439C121.009 7.13815 123.348 7.26966 124.454 7.85288C126.987 9.28234 126.273 14.8772 126.273 16.6955H135.888V14.6142L135.894 14.6085Z"
+                                    fill="#1D1D2C"
+                                ></path>
+                                <path
+                                    d="M146.389 52.975H156.004V29.2402H164.451V52.975H174V0.954102H164.385V21.241H155.872V1.08275H146.389V52.975Z"
+                                    fill="#1D1D2C"
+                                ></path>
+                                <path
+                                    class="diff-color"
+                                    d="M85.4276 24.3827L89.601 52.9748H77.9692L82.6911 24.3799L85.4276 24.3827Z"
+                                    fill="#FDD935"
+                                ></path>
+                            </g>
+                        </svg>
+                    </div>
+                </div>
+                <div class="world-clocks">
+                    <div class="world-clock-row">
+                        <span id="cet-time">00:00:00</span> <span class="tz-label">CET</span>
+                    </div>
+                    <div class="world-clock-row">
+                        <span id="gmt-time">00:00:00</span> <span class="tz-label">GMT</span>
+                    </div>
+                    <div class="world-clock-row">
+                        <span id="est-time">00:00:00</span> <span class="tz-label">EST</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Row -->
+            <div class="video-row bottom-row">
+                <div class="video-container">
+                    <div class="video-wrapper" id="wrapper4">
+                        <video id="video4" muted playsinline loop autoplay></video>
+                    </div>
+                    <div class="label-bar" id="label4">BBC NEWS</div>
+                </div>
+                <div class="video-container">
+                    <div class="video-wrapper" id="wrapper5">
+                        <video id="video5" muted playsinline loop autoplay></video>
+                    </div>
+                    <div class="label-bar" id="label5">BBC NEWS</div>
+                </div>
+                <div class="video-container">
+                    <div class="video-wrapper" id="wrapper6">
+                        <video id="video6" muted playsinline loop autoplay></video>
+                    </div>
+                    <div class="label-bar" id="label6">BBC NEWS</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            /* ============================================================
+             *  PLAYER CONFIGURATION — Easy to edit!
+             * ============================================================
+             *  Each slot (1-6) can be either "hls" or "youtube".
+             *
+             *  To switch a player:
+             *    1. Change  type  to "hls" or "youtube"
+             *    2. Set     src   to the HLS .m3u8 URL  or YouTube video ID
+             *    3. Set     label to whatever text you want below/above it
+             *
+             *  Example — switch slot 2 back to HLS:
+             *    { type: "hls", src: "https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8", label: "BBC NEWS" }
+             * ============================================================ */
+            const PLAYERS = [
+                {
+                    type: "hls",
+                    src: "https://vs-hls-push-ww-live.akamaized.net/x=4/i=urn:bbc:pips:service:bbc_news_channel_hd/t=3840/v=pv8/b=827008/a=pa4/b=128000/main.m3u8",
+                    label: "BBC NEWS",
+                },
+                { type: "youtube", src: "YDvsBbKfLPA", label: "SKY NEWS" },
+                {
+                    type: "hls",
+                    src: "https://d3bp6dwmpbdajl.cloudfront.net/v1/manifest/3722c60a815c199d9c0ef36c5b73da68a62b09d1/cc-ury0meh5m4nzm/b8fe0716-3fc0-4bae-974c-1f404952bee2/2.m3u8",
+                    label: "CNN",
+                },
+                {
+                    type: "hls",
+                    src: "https://live-hls-web-aje-gcp.thehlive.com/AJE/04.m3u8",
+                    label: "AL JAZEERA ENGLISH",
+                },
+                {
+                    type: "hls",
+                    src: "https://live-hls-web-aja-gcp.thehlive.com/AJA/04.m3u8",
+                    label: "AL JAZEERA ARABIC",
+                },
+                {
+                    type: "hls",
+                    src: "https://d1qvkrpvk32u24.cloudfront.net/RLS/RLSHD50/playlist.m3u8",
+                    label: "REUTERS WNS",
+                },
+            ];
+
+            // ---- Initialise each player ----
+            PLAYERS.forEach((cfg, i) => {
+                const slot = i + 1;
+                const wrapper = document.getElementById("wrapper" + slot);
+                const label = document.getElementById("label" + slot);
+
+                // Update the label text
+                if (label) label.textContent = cfg.label;
+
+                if (cfg.type === "youtube") {
+                    // Remove the <video> element and inject a YouTube iframe
+                    wrapper.innerHTML = "";
+                    const iframe = document.createElement("iframe");
+                    iframe.src =
+                        "https://www.youtube.com/embed/" +
+                        cfg.src +
+                        "?autoplay=1&mute=1&controls=0&iv_load_policy=3" +
+                        "&rel=0&modestbranding=1&showinfo=0&disablekb=1&playsinline=1";
+                    iframe.allow = "autoplay; encrypted-media; picture-in-picture";
+                    iframe.setAttribute("allowfullscreen", "");
+                    iframe.setAttribute("frameborder", "0");
+                    wrapper.appendChild(iframe);
+                } else {
+                    // HLS player
+                    const video = document.getElementById("video" + slot);
+                    if (!video) return;
+
+                    if (Hls.isSupported()) {
+                        const hls = new Hls({
+                            autoStartLoad: true,
+                            startPosition: -1,
+                            capLevelToPlayerSize: true,
+                            debug: false,
+                        });
+                        hls.loadSource(cfg.src);
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                            video.play().catch((e) => console.log("Autoplay prevented:", e));
+                        });
+                        hls.on(Hls.Events.ERROR, (event, data) => {
+                            if (data.fatal) {
+                                switch (data.type) {
+                                    case Hls.ErrorTypes.NETWORK_ERROR:
+                                        console.log("fatal network error, trying to recover");
+                                        hls.startLoad();
+                                        break;
+                                    case Hls.ErrorTypes.MEDIA_ERROR:
+                                        console.log("fatal media error, trying to recover");
+                                        hls.recoverMediaError();
+                                        break;
+                                    default:
+                                        hls.destroy();
+                                        break;
+                                }
+                            }
+                        });
+                    } else if (video.canPlayType("application/vnd.apple.mpegurl")) {
+                        video.src = cfg.src;
+                        video.addEventListener("loadedmetadata", () => {
+                            video.play().catch((e) => console.log("Autoplay prevented:", e));
+                        });
+                    }
+                }
+            });
+
+            // ---- Clock Logic ----
+            function updateClocks() {
+                const now = new Date();
+                const opts = { hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false };
+
+                document.getElementById("local-time").textContent = now.toLocaleTimeString("en-GB", opts);
+                document.getElementById("cet-time").textContent = now.toLocaleTimeString("en-GB", {
+                    ...opts,
+                    timeZone: "Europe/Paris",
+                });
+                document.getElementById("gmt-time").textContent = now.toLocaleTimeString("en-GB", {
+                    ...opts,
+                    timeZone: "GMT",
+                });
+                document.getElementById("est-time").textContent = now.toLocaleTimeString("en-GB", {
+                    ...opts,
+                    timeZone: "America/New_York",
+                });
+            }
+
+            setInterval(updateClocks, 1000);
+            updateClocks();
+        </script>
+    </body>
+</html>
